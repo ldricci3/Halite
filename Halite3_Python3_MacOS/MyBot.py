@@ -38,7 +38,7 @@ def action(game_map, ship, state, me):
         if s == max(n,e,w,s,c) and game_map[ship.position.directional_offset(Direction.South)].is_empty:
             return ship.move(Direction.South)
         elif n == max(n,e,w,s,c) and game_map[ship.position.directional_offset(Direction.North)].is_empty:
-            return ship.move(Di ection.North)
+            return ship.move(Direction.North)
         elif e == max(n,e,w,s,c) and game_map[ship.position.directional_offset(Direction.East)].is_empty:
             return ship.move(Direction.East)
         elif w == max(n,e,w,s,c) and game_map[ship.position.directional_offset(Direction.West)].is_empty:
