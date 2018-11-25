@@ -18,36 +18,7 @@ import random
 import logging
 
 
-""" <<<Helper Functions>>> """
 
-def selectState(ship):
-    if ship.halite_amount > 750:
-        return "return"
-    else:
-        return "searching"
-
-
-def action(game_map, ship, state, me):
-    if state == "searching":
-        n = game_map[ship.position.directional_offset(Direction.North)].halite_amount
-        s = game_map[ship.position.directional_offset(Direction.South)].halite_amount
-        e = game_map[ship.position.directional_offset(Direction.East)].halite_amount
-        w = game_map[ship.position.directional_offset(Direction.West)].halite_amount
-        c = game_map[ship.position].halite_amount
-
-        if s == max(n,e,w,s,c) and game_map[ship.position.directional_offset(Direction.South)].is_empty:
-            return ship.move(Direction.South)
-        elif n == max(n,e,w,s,c) and game_map[ship.position.directional_offset(Direction.North)].is_empty:
-            return ship.move(Direction.North)
-        elif e == max(n,e,w,s,c) and game_map[ship.position.directional_offset(Direction.East)].is_empty:
-            return ship.move(Direction.East)
-        elif w == max(n,e,w,s,c) and game_map[ship.position.directional_offset(Direction.West)].is_empty:
-            return ship.move(Direction.West)
-        else:
-            return ship.stay_still()
-
-    elif state == "return":
-        return ship.move(game_map.naive_navigation(ship.position, me.shipyard))
 
 
 """ <<<Game Begin>>> """
@@ -57,6 +28,64 @@ game = hlt.Game()
 # At this point "game" variable is populated with initial map data.
 # This is a good place to do computationally expensive start-up pre-processing.
 states = {}
+intendedMoves = []
+
+""" <<<Helper Functions>>> """
+
+def selectState(ship):
+    if states[] == null:
+        return searching
+
+    if states[ship.id] == "return":
+        if ship.halite_amount > 500:
+            return "return"
+        else:
+            return "searching"
+    else:
+        if ship.halite_amount > 750:
+            return "return"
+        else:
+            return "searching"
+
+
+def action(game_map, ship, state, me):
+    if state == "searching":
+        if game_map[ship.position].halite_amount > 250:
+            return ship.stay_still()
+        else:
+            n = game_map[ship.position.directional_offset(Direction.North)].halite_amount
+            s = game_map[ship.position.directional_offset(Direction.South)].halite_amount
+            e = game_map[ship.position.directional_offset(Direction.East)].halite_amount
+            w = game_map[ship.position.directional_offset(Direction.West)].halite_amount
+            c = game_map[ship.position].halite_amount
+
+
+            if s == max(n,e,w,s,c) and ship.position.directional_offset(Direction.South) not in intendedMoves:
+                intendedMoves.append(ship.position.directional_offset(Direction.South))
+                move =  ship.move(Direction.South)
+            elif n == max(n,e,w,s,c) and ship.position.directional_offset(Direction.North) not in intendedMoves:
+                intendedMoves.append(ship.position.directional_offset(Direction.North))
+                move = ship.move(Direction.North)
+            elif e == max(n,e,w,s,c) and ship.position.directional_offset(Direction.East) not in intendedMoves:
+                intendedMoves.append(ship.position.directional_offset(Direction.East))
+                move = ship.move(Direction.East)
+            elif w == max(n,e,w,s,c) and ship.position.directional_offset(Direction.West) not in intendedMoves:
+                intendedMoves.append(ship.position.directional_offset(Direction.West))
+                move = ship.move(Direction.West)
+            else:
+                intendedMoves.append(ship.position)
+                move = ship.stay_still()
+
+            logging.info("Bot {} move {}".format(ship.id, move))
+
+            return move
+
+
+
+    elif state == "return":
+        return ship.move(game_map.naive_navigate(ship, me.shipyard.position))
+
+
 
 # As soon as you call "ready" function below, the 2 second per turn timer will start.
 game.ready("MyPythonBot")
@@ -64,6 +93,11 @@ game.ready("MyPythonBot")
 # Now that your bot is initialized, save a message to yourself in the log file with some important information.
 #   Here, you log here your id, which you can always fetch from the game object by using my_id.
 logging.info("Successfully created bot! My Player ID is {}.".format(game.my_id))
+
+
+
+
+
 
 """ <<<Game Loop>>> """
 
@@ -86,18 +120,11 @@ while True:
         #action based on state
         command_queue.append(action(game_map, ship, states[ship.id], me))
 
-        # # For each of your ships, move randomly if the ship is on a low halite location or the ship is full.
-        # #   Else, collect halite.
-        # if game_map[ship.position].halite_amount < constants.MAX_HALITE / 10 or ship.is_full:
-        #     command_queue.append(
-        #         ship.move(
-        #             random.choice([ Direction.North, Direction.South, Direction.East, Direction.West ])))
-        # else:
-        #     command_queue.append(ship.stay_still())
+    intendedMoves = []
 
     # If the game is in the first 200 turns and you have enough halite, spawn a ship.
     # Don't spawn a ship if you currently have a ship at port, though - the ships will collide.
-    if game.turn_number <= 200 and me.halite_amount >= constants.SHIP_COST and me.halite_amount > 1000 and not game_map[me.shipyard].is_occupied:
+    if game.turn_number and me.halite_amount >= constants.SHIP_COST and not game_map[me.shipyard].is_occupied:
         command_queue.append(me.shipyard.spawn())
 
     # Send your moves back to the game environment, ending this turn.
